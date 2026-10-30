@@ -10,17 +10,16 @@ export default defineConfig({
       registerType: 'autoUpdate',
       devOptions: { enabled: true },
       manifest: {
-        name: 'Bore & Barrel',
-        short_name: 'Bore & Barrel',
-        description: 'A small armory — pistols, rifles, and shotguns.',
+        name: 'Iron Vault',
+        short_name: 'Iron Vault',
+        description: 'A house of craft, character, and carefully considered sporting pieces.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#f2f4f5',
-        theme_color: '#f2f4f5',
+        background_color: '#f5f1e9',
+        theme_color: '#f5f1e9',
         icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: '/iron-vault.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
       },
       workbox: {

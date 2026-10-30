@@ -3,8 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import './SplashScreen.css'
 
 /**
- * SplashScreen — Full-bleed signature splash animation for Bore & Barrel
- * (Gunshop Asli Ngawi).
+ * SplashScreen — Full-bleed signature splash animation for Iron Vault.
  *
  * Features:
  * - Dynamic rush & glow animation on logo
@@ -71,7 +70,7 @@ export default function SplashScreen({ onFinish, duration = 5400 }) {
       onClick={handleHit}
       role="dialog"
       aria-modal="true"
-      aria-label="Bore & Barrel Intro"
+      aria-label="Iron Vault Intro"
     >
       {/* Light bullet trail */}
       <div className="splash-trail" aria-hidden="true" />
@@ -82,8 +81,8 @@ export default function SplashScreen({ onFinish, duration = 5400 }) {
       {/* Gunshop Asli Ngawi cropped emblem */}
       <img
         className="splash-mark"
-        src="/logo.png"
-        alt="Bore & Barrel Gunshop Asli Ngawi Logo"
+        src="/iron-vault.svg"
+        alt="Iron Vault crest"
       />
 
       {/* Bullet impact cracks SVG */}
@@ -101,8 +100,8 @@ export default function SplashScreen({ onFinish, duration = 5400 }) {
 
       {/* Brand title reveal */}
       <section className="splash-brand">
-        <div className="splash-brand-name">Bore &amp; Barrel</div>
-        <div className="splash-brand-sub">GUNSHOP ASLI NGAWI</div>
+        <div className="splash-brand-name">Iron Vault</div>
+        <div className="splash-brand-sub">A HOUSE OF CRAFT &amp; CHARACTER</div>
       </section>
 
       {/* Skip button */}

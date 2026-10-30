@@ -1,4 +1,5 @@
 import FavoriteButton from '../common/FavoriteButton'
+import { ShoppingBag, Plus } from 'lucide-react'
 import { formatPrice, truncate } from '../../utils/helpers'
 
 /**
@@ -10,7 +11,7 @@ import { formatPrice, truncate } from '../../utils/helpers'
  * @param {Function} [props.onEdit]  — called when Edit is clicked (admin)
  * @param {Function} [props.onDelete]— called when Delete is clicked (admin)
  */
-export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
+export default function GunCard({ gun, onSelect, onEdit, onDelete, onAddToCart }) {
   const imgSrc = gun.image_url || gun.image || '/guns/pistol.svg'
   const category = gun.type || gun.category || '—'
   const caliber = gun.caliber || gun.difficulty || ''
@@ -75,6 +76,11 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
           </button>
         )}
       </div>
+      {onAddToCart && (
+        <button type="button" className="card-order-cta" disabled={gun.demoOnly} title={gun.demoOnly ? 'Run the Supabase catalogue seed before ordering this sample item.' : 'Add to cart'} onClick={() => onAddToCart(gun)}>
+          <ShoppingBag size={15} /><span>{gun.demoOnly ? 'Setup required' : 'Add to cart'}</span>{!gun.demoOnly && <Plus size={14} />}
+        </button>
+      )}
     </li>
   )
 }

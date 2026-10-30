@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title">
+  <title id="title">Decorative leather grip panels</title>
+  <rect width="640" height="420" fill="#e9e2d8"/>
+  <path d="M0 325h640v95H0z" fill="#b9a995"/>
+  <g fill="#624536" stroke="#33271f" stroke-width="7">
+    <path d="M180 82q66-36 117 10l-23 216q-44 22-92-2l18-104-30-67z"/>
+    <path d="M360 82q66-36 117 10l-23 216q-44 22-92-2l18-104-30-67z"/>
+  </g>
+  <g fill="none" stroke="#b89161" stroke-width="5" opacity=".85">
+    <path d="M208 123l52 27m-57 18l52 27m-58 18l51 27m-57 18l52 27"/>
+    <path d="M388 123l52 27m-57 18l52 27m-58 18l51 27m-57 18l52 27"/>
+  </g>
+  <text x="320" y="390" fill="#3d3028" font-family="Georgia,serif" font-size="20" text-anchor="middle" letter-spacing="4">DECORATIVE PROP</text>
+</svg>

@@ -1,7 +1,7 @@
 function Footer() {
   return (
     <footer className="footer">
-      <p>Bore &amp; Barrel, 123 Range Road</p>
+      <p>Iron Vault · Keep the craft. Honor the story.</p>
     </footer>
   )
 }

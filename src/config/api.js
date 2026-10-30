@@ -35,11 +35,15 @@ const apiClient = axios.create({
 // ---------------------------------------------------------------------------
 apiClient.interceptors.request.use(
   (config) => {
+    let accessToken = ''
+    try {
+      accessToken = JSON.parse(localStorage.getItem('iron-vault-session') || '{}').access_token || ''
+    } catch {
+      accessToken = ''
+    }
     if (IS_SUPABASE && SUPABASE_KEY) {
       config.headers['apikey'] = SUPABASE_KEY
-      if (!config.headers['Authorization']) {
-        config.headers['Authorization'] = `Bearer ${SUPABASE_KEY}`
-      }
+      config.headers['Authorization'] = `Bearer ${accessToken || SUPABASE_KEY}`
     }
     return config
   },

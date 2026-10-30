@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Iron Vault crest</title>
+  <rect width="128" height="128" rx="24" fill="#28251f"/>
+  <path d="M64 12 105 28v31c0 27-17 45-41 57C40 104 23 86 23 59V28z" fill="#353127" stroke="#c79a52" stroke-width="4"/>
+  <path d="M39 48h50v42H39z" fill="#1d1c18" stroke="#c79a52" stroke-width="3"/>
+  <path d="M49 48V37a15 15 0 0 1 30 0v11" fill="none" stroke="#c79a52" stroke-width="4"/>
+  <circle cx="64" cy="66" r="9" fill="#c79a52"/>
+  <path d="M64 74v9M47 60v18m34-18v18" stroke="#c79a52" stroke-width="3" stroke-linecap="round"/>
+  <text x="64" y="109" fill="#f2e5cc" font-family="Georgia,serif" font-size="12" font-weight="bold" text-anchor="middle" letter-spacing="2">IV</text>
+</svg>

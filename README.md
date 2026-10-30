@@ -1,46 +1,45 @@
-# Bore & Barrel
+# Iron Vault
 
-A dummy gunshop storefront built as a Progressive Web App. It runs offline
-with an app shell, a web app manifest, and a service worker, and uses React +
-Vite + Tailwind CSS.
+Iron Vault is a React + Vite storefront PWA with customer accounts, a persistent cart, database-backed order history, and a protected admin order desk.
 
-## Setup
+## Run locally
+
+Create `.env` in the project root with the Supabase project URL and publishable key:
+
+```env
+VITE_API_BASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
+```
+
+Then run:
 
 ```bash
 npm install
-npm run dev      # dev server with HMR
+npm run dev
 ```
 
-Other scripts:
+The customer storefront is available at `/`. The admin order desk is at `/admin` and requires a profile with `is_admin = true`.
+
+## Supabase setup
+
+In Supabase SQL Editor, run these files in order:
+
+1. `supabase/iron-vault-commerce.sql` creates customer profiles, protected order tables, admin-only product writes, and the secure checkout RPC.
+2. `supabase/seed-catalog.sql` inserts the complete 15-item demo catalogue.
+3. Sign up through the storefront and confirm the email if Supabase requests it.
+4. Promote the store owner by replacing the email in this statement and running it in SQL Editor:
+
+   ```sql
+   update public.profiles set is_admin = true where email = 'owner@example.com';
+   ```
+
+Customers can browse, add seeded products to their cart, place orders, and view order history. Administrators can manage catalogue items and update order statuses from `/admin`. Checkout records an order only; no payment processor or shipping integration is configured.
+
+## Scripts
 
 ```bash
-npm run build    # production build to dist/
-npm run preview  # serve the production build
-npm run lint     # oxlint
-```
-
-## Structure
-
-```
-.
-├── index.html              # HTML shell
-├── vite.config.js          # Vite + vite-plugin-pwa (manifest + service worker)
-├── public/                 # static assets served at /
-│   ├── icon-192.png / icon-512.png / icon.svg
-│   └── guns/               # product images
-└── src/
-    ├── main.jsx            # entry, mounts <App/>
-    ├── App.jsx             # app shell: tab state, header/nav/content/footer
-    ├── App.css             # app shell styles
-    ├── index.css           # global styles
-    ├── components/
-    │   ├── Header.jsx      # brand + nav
-    │   ├── GunCard.jsx     # single product card
-    │   └── Footer.jsx
-    ├── data/
-    │   └── guns.js         # dummy product data
-    └── pages/
-        ├── Catalog.jsx     # product grid
-        ├── About.jsx
-        └── Contact.jsx
+npm run dev
+npm run build
+npm run preview
+npm run lint
 ```

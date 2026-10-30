@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title">
+  <title id="title">Decorative brass sight mount prop</title>
+  <rect width="640" height="420" fill="#e5e8e5"/>
+  <path d="M0 325h640v95H0z" fill="#b5bcb5"/>
+  <g fill="#9b793c" stroke="#4f412a" stroke-width="8" stroke-linejoin="round">
+    <path d="M164 270h312v42H164z"/>
+    <path d="M208 270v-48l38-28h148l38 28v48z"/>
+    <path d="M254 194v-55h132v55z"/>
+    <path d="M294 139v-39h52v39z"/>
+  </g>
+  <circle cx="320" cy="169" r="34" fill="#d8c68b" stroke="#4f412a" stroke-width="8"/>
+  <text x="320" y="390" fill="#353d36" font-family="Georgia,serif" font-size="20" text-anchor="middle" letter-spacing="4">NON-FUNCTIONAL PROP</text>
+</svg>

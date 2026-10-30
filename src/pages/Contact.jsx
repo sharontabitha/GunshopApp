@@ -1,9 +1,9 @@
 function Contact() {
   return (
     <div className="page">
-      <h1 className="display">Come by the shop.</h1>
+      <h1 className="display">Send a raven—or a message.</h1>
       <p className="lede">
-        123 Range Road. Open Tuesday to Saturday, 10 to 6. Call (555) 010-0100.
+        The Iron Vault team is here to answer questions about the collection, store policies, and responsible ownership.
       </p>
     </div>
   )

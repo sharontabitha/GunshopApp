@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title">
+  <title id="title">Inert brass training cartridge display</title>
+  <rect width="640" height="420" fill="#efe8d9"/>
+  <path d="M0 330h640v90H0z" fill="#c9baa0"/>
+  <g fill="#b88735" stroke="#6c5125" stroke-width="8" transform="translate(98 94)">
+    <path d="M20 105h92l-8 120H28z"/><path d="M31 105V62q35-70 70 0v43z"/>
+    <path d="M150 80h92l-8 145h-76z"/><path d="M161 80V36q35-70 70 0v44z"/>
+    <path d="M280 105h92l-8 120h-76z"/><path d="M291 105V62q35-70 70 0v43z"/>
+  </g>
+  <path d="M95 344h450" stroke="#6b5638" stroke-width="8" stroke-linecap="round"/>
+  <text x="320" y="390" fill="#4c3b23" font-family="Georgia,serif" font-size="20" text-anchor="middle" letter-spacing="4">INERT DISPLAY PROP</text>
+</svg>

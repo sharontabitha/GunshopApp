@@ -23,7 +23,7 @@ import {
  *
  * Features: search, category filter, sort, CRUD actions, detail modal.
  */
-export default function Catalog({ onNavigate }) {
+export default function Catalog({ onNavigate, onAddToCart }) {
   // ---- API data ----
   const { guns: apiGuns, loading, error, refetch } = useGuns({ limit: 50 })
   const [useLocal, setUseLocal] = useState(false)
@@ -32,9 +32,15 @@ export default function Catalog({ onNavigate }) {
   const rawGuns = useMemo(() => {
     if (useLocal || (error && apiGuns.length === 0)) {
       // Enrich local data with synthetic ids so FavoriteButton and detail work
-      return GUNS_LOCAL.map((g, i) => ({ ...g, id: g.id || `local-${i}` }))
+      return GUNS_LOCAL.map((g, i) => ({ ...g, id: g.id || `local-${i}`, demoOnly: true }))
     }
-    return apiGuns
+    // Keep the classroom storefront at its full 15-item size regardless of
+    // backend configuration. Remote rows win where a fixture has the same name.
+    const remoteNames = new Set(apiGuns.map((item) => item.name?.toLowerCase()))
+    const demoAdditions = GUNS_LOCAL
+      .filter((item) => !remoteNames.has(item.name.toLowerCase()))
+      .map((item, index) => ({ ...item, id: `demo-${index}`, demoOnly: true }))
+    return [...apiGuns, ...demoAdditions]
   }, [apiGuns, error, useLocal])
 
   // ---- filters / sort ----
@@ -81,8 +87,9 @@ export default function Catalog({ onNavigate }) {
       <GunDetail
         gun={selectedGun}
         onBack={() => setSelectedGun(null)}
-        onEdit={(g) => onNavigate && onNavigate('Edit', g)}
-        onDelete={(g) => { setSelectedGun(null); setDeleteTarget(g) }}
+        onEdit={!selectedGun.demoOnly && onNavigate ? (g) => onNavigate('Edit', g) : undefined}
+        onDelete={!selectedGun.demoOnly && onNavigate ? (g) => { setSelectedGun(null); setDeleteTarget(g) } : undefined}
+        onAddToCart={!selectedGun.demoOnly ? onAddToCart : undefined}
       />
     )
   }
@@ -91,10 +98,9 @@ export default function Catalog({ onNavigate }) {
   return (
     <>
       <section className="masthead">
-        <h1 className="display">Hardware, by the spec sheet.</h1>
+        <h1 className="display">Find your next favorite.</h1>
         <p className="lede">
-          A small armory of pistols, rifles, and shotguns. Every piece listed
-          with its type, caliber, and price — nothing else.
+          Explore the Iron Vault collection: twelve carefully selected pieces and three useful accessories, all in one place.
         </p>
       </section>
 
@@ -171,8 +177,9 @@ export default function Catalog({ onNavigate }) {
                 key={gun.id || gun.name}
                 gun={gun}
                 onSelect={setSelectedGun}
-                onEdit={onNavigate ? (g) => onNavigate('Edit', g) : undefined}
-                onDelete={setDeleteTarget}
+                onEdit={!gun.demoOnly && onNavigate ? (g) => onNavigate('Edit', g) : undefined}
+                onDelete={!gun.demoOnly && onNavigate ? setDeleteTarget : undefined}
+                onAddToCart={onAddToCart}
               />
             ))}
           </ul>
