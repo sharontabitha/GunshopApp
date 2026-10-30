@@ -12,6 +12,7 @@ const CUSTOMER_NAV = [
 
 const ADMIN_NAV = [
   { id: 'Catalog', label: 'Catalog' },
+  { id: 'Favorites', label: 'Favorites', hasBadge: true },
   { id: 'Admin', label: 'Order desk' },
   { id: 'Profile', label: 'Profile' },
   { id: 'About', label: 'About' },
@@ -19,6 +20,7 @@ const ADMIN_NAV = [
 
 const GUEST_NAV = [
   { id: 'Catalog', label: 'Catalog' },
+  { id: 'Favorites', label: 'Favorites', hasBadge: true },
   { id: 'About', label: 'About' },
   { id: 'Contact', label: 'Contact' },
 ]

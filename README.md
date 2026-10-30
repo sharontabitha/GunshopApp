@@ -1,6 +1,6 @@
 # Iron Vault
 
-Iron Vault is a React + Vite storefront PWA with customer accounts, a persistent cart, database-backed order history, and a protected admin order desk.
+Iron Vault is a React + Vite storefront PWA with customer accounts, personal favorites, a persistent cart, database-backed order history, and a protected admin order desk.
 
 ## Run locally
 
@@ -24,7 +24,7 @@ The customer storefront is available at `/`. The admin order desk is at `/admin`
 
 In Supabase SQL Editor, run these files in order:
 
-1. `supabase/iron-vault-commerce.sql` creates customer profiles, protected order tables, admin-only product writes, and the secure checkout RPC.
+1. `supabase/iron-vault-commerce.sql` creates customer profiles, private favorites, protected order tables, admin-only product writes, and the secure checkout RPC.
 2. `supabase/seed-catalog.sql` inserts the complete 15-item demo catalogue.
 3. Sign up through the storefront and confirm the email if Supabase requests it.
 4. Promote the store owner by replacing the email in this statement and running it in SQL Editor:
@@ -33,7 +33,7 @@ In Supabase SQL Editor, run these files in order:
    update public.profiles set is_admin = true where email = 'owner@example.com';
    ```
 
-Customers can browse, add seeded products to their cart, place orders, and view order history. Administrators can manage catalogue items and update order statuses from `/admin`. Checkout records an order only; no payment processor or shipping integration is configured.
+Customers can browse, save favorites, add seeded products to their cart, place orders, and view order history. Guests can keep favorites on their current device; signed-in customer and admin favorites are private to their account. Administrators can manage catalogue items, view their own favorites, and update order statuses from `/admin`. Checkout records an order only; no payment processor or shipping integration is configured.
 
 ## Scripts
 

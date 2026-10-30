@@ -268,6 +268,7 @@ function App() {
               <FavoritesPage
                 onSelectGun={(g) => handleNavigate('Detail', g)}
                 onNavigateCatalog={() => setTab('Catalog')}
+                onAddToCart={!profile?.is_admin ? handleAddToCart : undefined}
               />
             )}
             {tab === 'Profile' && session?.user?.id && (

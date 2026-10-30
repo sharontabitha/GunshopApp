@@ -9,7 +9,7 @@ import GunCard from '../components/gun/GunCard'
  * FavoritesPage — Displays user's shortlisted / favorited weapons.
  * Supports dual-mode (server API + localStorage fallback).
  */
-export default function FavoritesPage({ onSelectGun, onNavigateCatalog }) {
+export default function FavoritesPage({ onSelectGun, onNavigateCatalog, onAddToCart }) {
   const { favorites, loading: favLoading, error: favError, refetch } = useFavorites()
   const { guns: apiGuns } = useGuns({ limit: 100 })
 
@@ -42,7 +42,9 @@ export default function FavoritesPage({ onSelectGun, onNavigateCatalog }) {
     const seen = new Set()
 
     favorites.forEach((fav) => {
-      const id = fav.id || fav.recipe_id || fav.gun_id
+      const id = typeof fav === 'object' && fav !== null
+        ? (fav.id ?? fav.product_id ?? fav.recipe_id ?? fav.gun_id)
+        : fav
       const match = allKnownGuns.get(id) || allKnownGuns.get(fav.name) || (fav.name ? fav : null)
       if (match && !seen.has(match.id || match.name)) {
         seen.add(match.id || match.name)
@@ -54,7 +56,7 @@ export default function FavoritesPage({ onSelectGun, onNavigateCatalog }) {
           name: fav.name || 'Hardware item',
           type: fav.category || 'Hardware',
           image_url: fav.image_url || '/guns/pistol.svg',
-          price: fav.cook_time || 0,
+          price: fav.price || fav.cook_time || 0,
         })
       }
     })
@@ -69,15 +71,15 @@ export default function FavoritesPage({ onSelectGun, onNavigateCatalog }) {
       <section className="masthead">
         <h1 className="display">Saved Shortlist</h1>
         <p className="lede">
-          Weapons and equipment marked for procurement. Persisted with your armory profile.
+          Keep the products you like close. Sign in to sync favorites across sessions.
         </p>
       </section>
 
       <section className="fav-content">
         <div className="list-head">
-          <h2>Armory Favorites</h2>
+          <h2>Saved Favorites</h2>
           <span className="count">
-            {favoriteItems.length} weapon{favoriteItems.length !== 1 ? 's' : ''} saved
+            {favoriteItems.length} item{favoriteItems.length !== 1 ? 's' : ''} saved
           </span>
         </div>
 
@@ -101,7 +103,7 @@ export default function FavoritesPage({ onSelectGun, onNavigateCatalog }) {
         {!isLoading && favoriteItems.length === 0 && !favError && (
           <div className="state-box">
             <Heart size={36} stroke="var(--steel)" />
-            <h3>No hardware favorited yet</h3>
+            <h3>No favorites saved yet</h3>
             <p className="lede">
               Explore the armory catalog and click the heart icon on any piece to save it here.
             </p>
@@ -125,6 +127,7 @@ export default function FavoritesPage({ onSelectGun, onNavigateCatalog }) {
                 key={gun.id || gun.name}
                 gun={gun}
                 onSelect={onSelectGun}
+                onAddToCart={onAddToCart}
               />
             ))}
           </ul>

@@ -1,11 +1,27 @@
 import { apiClient, IS_SUPABASE } from '../config/api'
 
+const getFallbackImage = (type = '') => {
+  const normalizedType = String(type).toLowerCase()
+  if (normalizedType.includes('shotgun')) return '/guns/shotgun.svg'
+  if (normalizedType.includes('rifle')) return '/guns/rifle.svg'
+  return '/guns/pistol.svg'
+}
+
+const sanitizeImageUrl = (imageUrl, fallback = '/guns/pistol.svg') =>
+  typeof imageUrl === 'string' && /^(https?:\/\/|\/)/i.test(imageUrl)
+    ? imageUrl
+    : fallback
+
 // ---------------------------------------------------------------------------
 // Normalizer — standardizes product shape whether received from Supabase
 // (public.products) or from the university API (/api/v1/recipes).
 // ---------------------------------------------------------------------------
 export const normalizeProduct = (item) => {
   if (!item) return null
+
+  const productType = item.type || item.category || 'Hardware'
+  const imageCandidate = item.image_url || item.image
+  const safeImageUrl = sanitizeImageUrl(imageCandidate, getFallbackImage(productType))
 
   // Resolve specifications from Supabase `specs` (text array) or API `ingredients`
   let specsList = []
@@ -42,13 +58,13 @@ export const normalizeProduct = (item) => {
     ...item,
     id: item.id,
     name: item.name || 'Hardware Piece',
-    type: item.type || item.category || 'Hardware',
-    category: item.type || item.category || 'Hardware',
+    type: productType,
+    category: productType,
     caliber: item.caliber || 'Standard',
     price: Number(item.price ?? item.cook_time ?? 0),
     description: item.description || '',
-    image_url: item.image_url || item.image || '/guns/pistol.svg',
-    image: item.image_url || item.image || '/guns/pistol.svg',
+    image_url: safeImageUrl,
+    image: safeImageUrl,
     ingredients: specsList,
     steps: stepsList,
   }
@@ -140,7 +156,7 @@ class GunService {
         price: Number(data.price ?? data.cook_time ?? 0),
         description: data.description || '',
         specs: specsArray,
-        image_url: data.image_url || null,
+        image_url: sanitizeImageUrl(data.image_url, getFallbackImage(data.type || data.category)),
       }
 
       const res = await apiClient.post('/rest/v1/products', payload, {
@@ -174,7 +190,7 @@ class GunService {
       }
       if (data.description !== undefined) payload.description = data.description
       if (specsArray !== undefined) payload.specs = specsArray
-      if (data.image_url !== undefined) payload.image_url = data.image_url
+      if (data.image_url !== undefined) payload.image_url = sanitizeImageUrl(data.image_url, getFallbackImage(data.type))
 
       const res = await apiClient.patch(`/rest/v1/products?id=eq.${id}`, payload, {
         headers: { Prefer: 'return=representation' },

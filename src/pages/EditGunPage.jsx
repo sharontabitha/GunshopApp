@@ -196,10 +196,8 @@ export default function EditGunPage({ gun, gunId, onBack, onSuccess }) {
         setTimeout(() => setSuccessMsg(''), 3000)
       }
     } catch (err) {
-      console.warn('Image upload failed, using local blob:', err)
-      setCurrentImageUrl(imagePreview)
-      setImageFile(null)
-      setImagePreview(null)
+      console.warn('Image upload failed; keeping the existing product image:', err)
+      setError('Image upload failed. The existing product image will be kept.')
     } finally {
       setUploading(false)
     }
@@ -272,7 +270,7 @@ export default function EditGunPage({ gun, gunId, onBack, onSuccess }) {
       price: Number(formData.price) || 500,
       category: formData.category || 'makanan',
       description: formData.description.trim() || `${formData.type} caliber ${formData.caliber}.`,
-      image_url: imagePreview || currentImageUrl || '/guns/pistol.svg',
+      image_url: currentImageUrl || '/guns/pistol.svg',
       prep_time: 15,
       cook_time: Number(formData.price) || 500,
       servings: Number(formData.servings) || 1,

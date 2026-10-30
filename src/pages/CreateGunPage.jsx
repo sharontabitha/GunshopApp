@@ -172,9 +172,9 @@ export default function CreateGunPage({ onBack, onSuccess }) {
         throw new Error(result.message || 'Image upload failed.')
       }
     } catch (err) {
-      console.warn('Upload API failed, falling back to local preview:', err)
-      // Allow fallback to image preview so the user can continue even if MinIO bucket is unreachable
-      setUploadedImageUrl(imagePreview || '/guns/pistol.svg')
+      console.warn('Image upload failed; using the catalogue placeholder instead:', err)
+      setError('Image upload failed. You can continue with the default product image.')
+      setUploadedImageUrl('/guns/pistol.svg')
       setCurrentStep('form')
     } finally {
       setUploading(false)

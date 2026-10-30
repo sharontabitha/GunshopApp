@@ -68,10 +68,29 @@ create table if not exists public.order_items (
   image_url text not null default ''
 );
 
+-- A signed-in customer or administrator can keep a private favorites list.
+create table if not exists public.favorites (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  product_id bigint not null references public.products(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, product_id)
+);
+
 alter table public.profiles enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
 alter table public.products enable row level security;
+alter table public.favorites enable row level security;
+
+-- Blob URLs only exist in the browser that created them and cannot be used as
+-- permanent catalogue image URLs. Replace any old preview URLs with local art.
+update public.products
+set image_url = case
+  when lower(coalesce(type, '')) like '%shotgun%' then '/guns/shotgun.svg'
+  when lower(coalesce(type, '')) like '%rifle%' then '/guns/rifle.svg'
+  else '/guns/pistol.svg'
+end
+where image_url like 'blob:%';
 
 -- Remove any broad starter-project product policies before applying the
 -- public-read/admin-write rules below.
@@ -104,6 +123,16 @@ create policy "products: admin update" on public.products
   for update to authenticated using (public.is_admin()) with check (public.is_admin());
 create policy "products: admin delete" on public.products
   for delete to authenticated using (public.is_admin());
+
+drop policy if exists "favorites: read own" on public.favorites;
+create policy "favorites: read own" on public.favorites
+  for select to authenticated using (user_id = auth.uid());
+drop policy if exists "favorites: insert own" on public.favorites;
+create policy "favorites: insert own" on public.favorites
+  for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists "favorites: delete own" on public.favorites;
+create policy "favorites: delete own" on public.favorites
+  for delete to authenticated using (user_id = auth.uid());
 
 drop policy if exists "orders: customer or admin read" on public.orders;
 create policy "orders: customer or admin read" on public.orders
@@ -158,7 +187,7 @@ begin
 
     select * into product_row
     from public.products
-    where id = (item->>'product_id')::uuid;
+    where id = (item->>'product_id')::bigint;
     if not found then raise exception 'A selected product is no longer available.'; end if;
 
     insert into public.order_items (order_id, product_id, product_name, quantity, unit_price, image_url)
@@ -177,6 +206,7 @@ grant select on public.products to anon, authenticated;
 grant insert, update, delete on public.products to authenticated;
 grant select, update on public.orders to authenticated;
 grant select on public.order_items to authenticated;
+grant select, insert, delete on public.favorites to authenticated;
 grant select, update on public.profiles to authenticated;
 
 -- After signing up at the site, replace the email below with the store owner's

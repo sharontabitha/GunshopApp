@@ -1,26 +1,31 @@
 import { useState, useEffect, useCallback } from 'react'
 import favoriteService from '../services/favoriteService'
 import { getUserIdentifier } from '../services/userService'
+import { getSession } from '../services/authService'
+import { IS_SUPABASE } from '../config/api'
 
 // ---------------------------------------------------------------------------
 // localStorage fallback — used when the backend is unavailable so that
 // favourites are still fully functional offline.
 // ---------------------------------------------------------------------------
 
-const LOCAL_KEY = 'bore_barrel_favorites'
+const LOCAL_KEY = 'iron-vault-favorites'
 
-const readLocalFavs = () => {
+const getFavoriteOwner = () => getSession()?.user?.id || getUserIdentifier()
+const getLocalKey = (owner) => `${LOCAL_KEY}:${owner}`
+
+const readLocalFavs = (owner) => {
   try {
-    const raw = localStorage.getItem(LOCAL_KEY)
+    const raw = localStorage.getItem(getLocalKey(owner))
     return raw ? JSON.parse(raw) : []
   } catch {
     return []
   }
 }
 
-const writeLocalFavs = (ids) => {
+const writeLocalFavs = (owner, ids) => {
   try {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(ids))
+    localStorage.setItem(getLocalKey(owner), JSON.stringify(ids))
   } catch {
     /* quota exceeded — silently fail */
   }
@@ -37,12 +42,19 @@ export function useFavorites() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isLocal, setIsLocal] = useState(false)
-  const userIdentifier = getUserIdentifier()
+  const userIdentifier = getFavoriteOwner()
+  const useRemote = !IS_SUPABASE || Boolean(getSession()?.user?.id)
 
   const fetchFavorites = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
+
+      if (IS_SUPABASE && !useRemote) {
+        setFavorites(readLocalFavs(userIdentifier))
+        setIsLocal(true)
+        return
+      }
 
       const response = await favoriteService.getFavorites(userIdentifier)
 
@@ -54,15 +66,18 @@ export function useFavorites() {
       }
     } catch {
       // Fallback to localStorage
-      setFavorites(readLocalFavs())
+      setFavorites(readLocalFavs(userIdentifier))
       setIsLocal(true)
     } finally {
       setLoading(false)
     }
-  }, [userIdentifier])
+  }, [userIdentifier, useRemote])
 
   useEffect(() => {
     fetchFavorites()
+    const handleFavoritesChanged = () => fetchFavorites()
+    window.addEventListener('iron-vault:favorites-changed', handleFavoritesChanged)
+    return () => window.removeEventListener('iron-vault:favorites-changed', handleFavoritesChanged)
   }, [fetchFavorites])
 
   return { favorites, loading, error, isLocal, refetch: fetchFavorites }
@@ -75,25 +90,26 @@ export function useFavorites() {
 export function useToggleFavorite() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const userIdentifier = getUserIdentifier()
+  const userIdentifier = getFavoriteOwner()
+  const useRemote = !IS_SUPABASE || Boolean(getSession()?.user?.id)
 
   const toggleFavorite = async (gunId) => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await favoriteService.toggleFavorite({
-        recipe_id: gunId,
-        user_identifier: userIdentifier,
-      })
+      const response = useRemote
+        ? await favoriteService.toggleFavorite({ recipe_id: gunId, user_identifier: userIdentifier })
+        : null
 
-      if (response.success) {
+      if (response?.success) {
+        window.dispatchEvent(new Event('iron-vault:favorites-changed'))
         return response.data
       }
-      throw new Error(response.message)
+      throw new Error(response?.message || 'Save favorites locally while signed out.')
     } catch {
       // Fallback: toggle in localStorage
-      const current = readLocalFavs()
+      const current = readLocalFavs(userIdentifier)
       const idx = current.findIndex((id) => String(id) === String(gunId))
       let isFavorited
 
@@ -104,7 +120,8 @@ export function useToggleFavorite() {
         current.splice(idx, 1)
         isFavorited = false
       }
-      writeLocalFavs(current)
+      writeLocalFavs(userIdentifier, current)
+      window.dispatchEvent(new Event('iron-vault:favorites-changed'))
       return { is_favorited: isFavorited }
     } finally {
       setLoading(false)
