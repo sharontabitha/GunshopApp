@@ -1,6 +1,7 @@
 import FavoriteButton from '../common/FavoriteButton'
 import { ShoppingBag, Plus } from 'lucide-react'
 import { formatPrice, truncate } from '../../utils/helpers'
+import ShareButton from '../common/ShareButton'
 
 /**
  * Product card used in the catalog grid.
@@ -32,6 +33,7 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete, onAddToCart }
           width="240"
           height="180"
           loading="lazy"
+          decoding="async"
         />
 
         <span className="name display">{gun.name}</span>
@@ -51,6 +53,7 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete, onAddToCart }
       {/* Floating actions row */}
       <div className="card-actions">
         <FavoriteButton gunId={gun.id || gun.name} />
+        <ShareButton product={gun} compact />
 
         {onEdit && (
           <button

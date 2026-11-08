@@ -6,8 +6,6 @@ const CUSTOMER_NAV = [
   { id: 'Favorites', label: 'Favorites', hasBadge: true },
   { id: 'Orders', label: 'Orders' },
   { id: 'Profile', label: 'Profile' },
-  { id: 'About', label: 'About' },
-  { id: 'Contact', label: 'Contact' },
 ]
 
 const ADMIN_NAV = [
@@ -15,14 +13,12 @@ const ADMIN_NAV = [
   { id: 'Favorites', label: 'Favorites', hasBadge: true },
   { id: 'Admin', label: 'Order desk' },
   { id: 'Profile', label: 'Profile' },
-  { id: 'About', label: 'About' },
 ]
 
 const GUEST_NAV = [
   { id: 'Catalog', label: 'Catalog' },
   { id: 'Favorites', label: 'Favorites', hasBadge: true },
-  { id: 'About', label: 'About' },
-  { id: 'Contact', label: 'Contact' },
+  { id: 'Profile', label: 'Profile' },
 ]
 
 function Header({ tab, onTab, onNavigateCreate, theme = 'light', onToggleTheme, cartCount = 0, isAuthenticated = false, isAdmin = false, onLogin, onLogout }) {

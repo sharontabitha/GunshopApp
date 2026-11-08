@@ -42,8 +42,10 @@ export default function CreateGunPage({ onBack, onSuccess }) {
   })
 
   const [imageFile, setImageFile] = useState(null)
+  const [imageFiles, setImageFiles] = useState([])
   const [imagePreview, setImagePreview] = useState(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState('')
+  const [uploadedImageUrls, setUploadedImageUrls] = useState([])
 
   // Specifications (ingredients in API)
   const [specs, setSpecs] = useState([
@@ -73,6 +75,7 @@ export default function CreateGunPage({ onBack, onSuccess }) {
       specs,
       steps,
       uploadedImageUrl,
+      uploadedImageUrls,
     }
     const saved = saveDraft(draftData, 'create')
     if (saved) {
@@ -83,17 +86,13 @@ export default function CreateGunPage({ onBack, onSuccess }) {
         setTimeout(() => setSuccessMsg(''), 3000)
       }
     }
-  }, [formData, specs, steps, uploadedImageUrl])
+  }, [formData, specs, steps, uploadedImageUrl, uploadedImageUrls])
 
   // Auto-save draft every 30 seconds while in form step
   useEffect(() => {
     if (currentStep !== 'form') return
-
-    const interval = setInterval(() => {
-      handleSaveDraft(false)
-    }, 30000)
-
-    return () => clearInterval(interval)
+    const timer = setTimeout(() => handleSaveDraft(false), 900)
+    return () => clearTimeout(timer)
   }, [handleSaveDraft, currentStep])
 
   const handleLoadDraft = () => {
@@ -104,6 +103,7 @@ export default function CreateGunPage({ onBack, onSuccess }) {
       if (draft.steps) setSteps(draft.steps)
       if (draft.uploadedImageUrl) {
         setUploadedImageUrl(draft.uploadedImageUrl)
+        setUploadedImageUrls(draft.uploadedImageUrls || [draft.uploadedImageUrl])
         setImagePreview(draft.uploadedImageUrl)
         setCurrentStep('form')
       }
@@ -121,22 +121,20 @@ export default function CreateGunPage({ onBack, onSuccess }) {
 
   // Handle file selection
   const handleImageChange = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size exceeds 5MB limit.')
-      return
-    }
-
     const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    if (!allowed.includes(file.type)) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    if (files.length > 5) { setError('Choose up to 5 images.'); return }
+    if (files.some((file) => file.size > 5 * 1024 * 1024)) { setError('Each image must be under 5MB.'); return }
+    if (files.some((file) => !allowed.includes(file.type))) {
       setError('Allowed formats: .jpg, .jpeg, .png, .webp')
       return
     }
 
-    setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
+    setImageFiles(files)
+    setImageFile(files[0])
+    setImagePreview(URL.createObjectURL(files[0]))
+    setUploadedImageUrls([])
     setError('')
   }
 
@@ -164,18 +162,18 @@ export default function CreateGunPage({ onBack, onSuccess }) {
     try {
       setUploading(true)
       setError('')
-      const result = await uploadService.uploadImage(imageFile)
-      if (result.success && result.data?.url) {
-        setUploadedImageUrl(result.data.url)
+      const results = await Promise.all((imageFiles.length ? imageFiles : [imageFile]).map((file) => uploadService.uploadImage(file)))
+      const urls = results.map((result) => result.data?.url).filter(Boolean)
+      if (urls.length) {
+        setUploadedImageUrls(urls)
+        setUploadedImageUrl(urls[0])
         setCurrentStep('form')
       } else {
         throw new Error(result.message || 'Image upload failed.')
       }
     } catch (err) {
       console.warn('Image upload failed; using the catalogue placeholder instead:', err)
-      setError('Image upload failed. You can continue with the default product image.')
-      setUploadedImageUrl('/guns/pistol.svg')
-      setCurrentStep('form')
+      setError(err.message || 'Image upload failed. Please check Storage settings and try again.')
     } finally {
       setUploading(false)
     }
@@ -262,6 +260,7 @@ export default function CreateGunPage({ onBack, onSuccess }) {
       category: formData.category || 'makanan',
       description: formData.description.trim() || `${formData.type} caliber ${formData.caliber}.`,
       image_url: uploadedImageUrl || '/guns/pistol.svg',
+      image_urls: uploadedImageUrls.length ? uploadedImageUrls : [uploadedImageUrl || '/guns/pistol.svg'],
       prep_time: 15,
       cook_time: Number(formData.price) || 500, // Price stored in cook_time
       servings: Number(formData.servings) || 1,
@@ -357,13 +356,14 @@ export default function CreateGunPage({ onBack, onSuccess }) {
                 id="gun-image-input"
                 type="file"
                 accept="image/jpeg,image/jpg,image/png,image/webp"
+                multiple
                 onChange={handleImageChange}
                 className="hidden-file-input"
               />
               <label htmlFor="gun-image-input" className="upload-label">
                 <Upload size={36} className="upload-icon" />
                 <span className="upload-main-text">Click to choose an image file</span>
-                <span className="upload-sub-text">JPG, PNG, or WebP up to 5MB</span>
+                <span className="upload-sub-text">Select up to 5 JPG, PNG, or WebP images (5MB each)</span>
               </label>
 
               <div className="preset-selector">
@@ -404,6 +404,8 @@ export default function CreateGunPage({ onBack, onSuccess }) {
                     setImageFile(null)
                     setImagePreview(null)
                     setUploadedImageUrl('')
+                    setImageFiles([])
+                    setUploadedImageUrls([])
                   }}
                   title="Remove image"
                 >
@@ -441,6 +443,7 @@ export default function CreateGunPage({ onBack, onSuccess }) {
               </div>
             </div>
           )}
+          {imageFiles.length > 1 && <p className="form-hint">{imageFiles.length} images selected. All will be uploaded to the catalog.</p>}
         </div>
       )}
 

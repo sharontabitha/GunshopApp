@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { ArrowLeft, Star, Send, Loader } from 'lucide-react'
+import { ArrowLeft, Star, Send, Loader, ThumbsUp, ThumbsDown, Pencil, Trash2, X } from 'lucide-react'
 import { ShoppingBag } from 'lucide-react'
 import FavoriteButton from '../common/FavoriteButton'
+import ShareButton from '../common/ShareButton'
 import { useReviews, useCreateReview } from '../../hooks/useReviews'
 import { getUserIdentifier } from '../../services/userService'
 import { formatPrice, averageRating } from '../../utils/helpers'
+import reviewService from '../../services/reviewService'
+import { getSession } from '../../services/authService'
 
 /**
  * Full-screen product detail view.
@@ -16,7 +19,9 @@ import { formatPrice, averageRating } from '../../utils/helpers'
  * @param {Function} [props.onDelete]— trigger delete flow
  */
 export default function GunDetail({ gun, onBack, onEdit, onDelete, onAddToCart }) {
-  const imgSrc = gun.image_url || gun.image || '/guns/pistol.svg'
+  const images = gun.image_urls?.length ? gun.image_urls : [gun.image_url || gun.image || '/guns/pistol.svg']
+  const [selectedImage, setSelectedImage] = useState(images[0])
+  const imgSrc = images.includes(selectedImage) ? selectedImage : images[0]
   const category = gun.type || gun.category || '—'
   const caliber = gun.caliber || gun.difficulty || ''
   const price = gun.price ?? gun.cook_time ?? 0
@@ -28,6 +33,9 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete, onAddToCart }
   const [comment, setComment] = useState('')
   const [reviewError, setReviewError] = useState('')
   const [reviewSuccess, setReviewSuccess] = useState('')
+  const [editingReview, setEditingReview] = useState(null)
+  const [reacting, setReacting] = useState(null)
+  const isSignedIn = Boolean(getSession()?.user?.id)
 
   const avgRating = gun.average_rating || averageRating(reviews)
   const reviewCount = gun.review_count ?? reviews.length
@@ -42,20 +50,45 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete, onAddToCart }
       return
     }
 
-    const result = await createReview(gun.id, {
-      user_identifier: getUserIdentifier(),
-      rating,
-      comment: comment.trim(),
-    })
+    const result = editingReview
+      ? await reviewService.updateReview(editingReview, { rating, comment: comment.trim() }).then((response) => response.data).catch((error) => { setReviewError(error.message || 'Could not update review.'); return null })
+      : await createReview(gun.id, { user_id: getSession()?.user?.id || getUserIdentifier(), rating, comment: comment.trim() })
 
     if (result) {
-      setReviewSuccess('Review submitted!')
+      setReviewSuccess(editingReview ? 'Review updated.' : 'Review submitted!')
       setComment('')
       setRating(5)
+      setEditingReview(null)
       refetchReviews()
     } else {
       setReviewError('Could not submit review. The server may be unavailable.')
     }
+  }
+
+  const startEditingReview = (review) => {
+    setEditingReview(review.id)
+    setRating(review.rating)
+    setComment(review.comment || '')
+    setReviewSuccess('Editing your review.')
+    window.scrollTo({ top: document.querySelector('.review-form')?.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' })
+  }
+
+  const deleteOwnReview = async (reviewId) => {
+    if (!window.confirm('Delete your review?')) return
+    try {
+      await reviewService.deleteReview(reviewId)
+      refetchReviews()
+    } catch (error) { setReviewError(error.message || 'Could not delete review.') }
+  }
+
+  const voteReview = async (reviewId, vote) => {
+    if (!isSignedIn) { setReviewError('Sign in to like or dislike reviews.'); return }
+    try {
+      setReacting(reviewId)
+      await reviewService.voteReview(reviewId, vote)
+      await refetchReviews()
+    } catch (error) { setReviewError(error.message || 'Could not save your reaction.') }
+    finally { setReacting(null) }
   }
 
   return (
@@ -67,7 +100,9 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete, onAddToCart }
 
       {/* Hero */}
       <div className="detail-hero">
-        <img className="detail-img" src={imgSrc} alt={gun.name} />
+          <div className="detail-gallery"><img className="detail-img" src={imgSrc} alt={gun.name} decoding="async" fetchPriority="high" />
+            {images.length > 1 && <div className="detail-gallery-thumbs">{images.map((url) => <button key={url} type="button" className={url === imgSrc ? 'gallery-thumb active' : 'gallery-thumb'} onClick={() => setSelectedImage(url)} aria-label="View product image"><img src={url} alt="" loading="lazy" decoding="async" /></button>)}</div>}
+          </div>
         <div className="detail-info">
           <h1 className="display">{gun.name}</h1>
           <p className="type">
@@ -85,6 +120,7 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete, onAddToCart }
 
           <div className="detail-actions">
             <FavoriteButton gunId={gun.id || gun.name} />
+            <ShareButton product={gun} />
             {onAddToCart && <button type="button" className="btn btn--primary" onClick={() => onAddToCart(gun)}><ShoppingBag size={16} /> Add to cart</button>}
             {onEdit && (
               <button type="button" className="btn btn--outline" onClick={() => onEdit(gun)}>
@@ -139,6 +175,7 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete, onAddToCart }
 
         {/* Submit review */}
         <form className="review-form" onSubmit={handleSubmitReview}>
+          {!isSignedIn && <p className="form-hint">Sign in to write, edit, or react to reviews.</p>}
           <div className="review-stars">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -169,14 +206,15 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete, onAddToCart }
           <button
             type="submit"
             className="btn btn--primary"
-            disabled={submitting || !gun.id}
+            disabled={submitting || !gun.id || !isSignedIn}
           >
             {submitting ? (
               <><Loader size={16} className="spin" /> Submitting…</>
             ) : (
-              <><Send size={16} /> Submit Review</>
+              <><Send size={16} /> {editingReview ? 'Save Changes' : 'Submit Review'}</>
             )}
           </button>
+          {editingReview && <button type="button" className="btn btn--outline btn--sm" onClick={() => { setEditingReview(null); setComment(''); setRating(5) }}><X size={14} /> Cancel edit</button>}
 
           {reviewError && <p className="form-error">{reviewError}</p>}
           {reviewSuccess && <p className="form-success">{reviewSuccess}</p>}
@@ -208,6 +246,15 @@ export default function GunDetail({ gun, onBack, onEdit, onDelete, onAddToCart }
                   </span>
                 </div>
                 {rev.comment && <p className="review-comment">{rev.comment}</p>}
+                <div className="review-actions">
+                  {rev.is_mine ? <>
+                    <button type="button" className="btn btn--outline btn--sm" onClick={() => startEditingReview(rev)}><Pencil size={14} /> Edit</button>
+                    <button type="button" className="btn btn--outline btn--sm" onClick={() => deleteOwnReview(rev.id)}><Trash2 size={14} /> Delete</button>
+                  </> : <>
+                    <button type="button" className={rev.my_vote === 1 ? 'review-vote active' : 'review-vote'} onClick={() => voteReview(rev.id, 1)} disabled={reacting === rev.id || !isSignedIn} aria-label="Like review"><ThumbsUp size={15} /> {rev.likes || 0}</button>
+                    <button type="button" className={rev.my_vote === -1 ? 'review-vote active' : 'review-vote'} onClick={() => voteReview(rev.id, -1)} disabled={reacting === rev.id || !isSignedIn} aria-label="Dislike review"><ThumbsDown size={15} /> {rev.dislikes || 0}</button>
+                  </>}
+                </div>
               </li>
             ))}
           </ul>

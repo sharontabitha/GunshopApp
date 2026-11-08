@@ -11,6 +11,7 @@
 
 const PREFIX = 'gun_draft_'
 const TS_SUFFIX = '_ts'
+const announceDraftChange = () => window.dispatchEvent(new Event('iron-vault:drafts-changed'))
 
 /**
  * Persist a draft object.
@@ -24,6 +25,7 @@ export const saveDraft = (draftData, draftId = 'create') => {
     const ts = new Date().toISOString()
     localStorage.setItem(key, JSON.stringify({ ...draftData, savedAt: ts }))
     localStorage.setItem(`${key}${TS_SUFFIX}`, ts)
+    announceDraftChange()
     return true
   } catch {
     return false
@@ -51,6 +53,7 @@ export const deleteDraft = (draftId = 'create') => {
     const key = `${PREFIX}${draftId}`
     localStorage.removeItem(key)
     localStorage.removeItem(`${key}${TS_SUFFIX}`)
+    announceDraftChange()
     return true
   } catch {
     return false

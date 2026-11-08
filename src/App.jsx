@@ -7,8 +7,6 @@ import ProfilePage from './pages/ProfilePage.jsx'
 import CreateGunPage from './pages/CreateGunPage.jsx'
 import EditGunPage from './pages/EditGunPage.jsx'
 import GunDetail from './components/gun/GunDetail.jsx'
-import About from './pages/About.jsx'
-import Contact from './pages/Contact.jsx'
 import PWABadge from './components/PWABadge.jsx'
 import ConfirmModal from './components/modals/ConfirmModal.jsx'
 import SplashScreen from './components/common/SplashScreen.jsx'
@@ -272,10 +270,13 @@ function App() {
               />
             )}
             {tab === 'Profile' && session?.user?.id && (
-              <ProfilePage onReplaySplash={() => setShowSplash(true)} />
+              <ProfilePage
+                session={session}
+                authProfile={profile}
+                onReplaySplash={() => setShowSplash(true)}
+                onResumeDraft={(draftId) => draftId === 'create' ? handleNavigate('Create') : handleNavigate('Edit', { id: draftId })}
+              />
             )}
-            {tab === 'About' && <About />}
-            {tab === 'Contact' && <Contact />}
           </>
         )}
       </main>
@@ -283,16 +284,16 @@ function App() {
       {/* Global Delete Confirmation */}
       <ConfirmModal
         open={Boolean(deleteTarget)}
-        title="Delete Hardware Record"
-        message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title="Archive Catalog Item"
+        message={`Archive "${deleteTarget?.name}"? You can restore it later from Profile → Archive.`}
+        confirmLabel="Archive"
         danger
         loading={deleting}
         onConfirm={async () => {
           if (!deleteTarget) return
           try {
             setDeleting(true)
-            await gunService.deleteGun(deleteTarget.id)
+            await gunService.archiveGun(deleteTarget.id)
             setDeleteTarget(null)
             handleBackToList()
             setTab('Catalog')

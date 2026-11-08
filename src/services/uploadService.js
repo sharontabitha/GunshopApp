@@ -41,7 +41,7 @@ class UploadService {
           headers: {
             'Content-Type': file.type,
             apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
+            Authorization: `Bearer ${readAccessToken() || SUPABASE_KEY}`,
           },
           timeout: 30000,
         })
@@ -52,19 +52,7 @@ class UploadService {
           data: { url: publicUrl, filename: fileName },
         }
       } catch (err) {
-        console.warn('Supabase bucket upload not accessible, creating base64 data URL:', err)
-        // Read file as base64 Data URL so the image displays and persists
-        const dataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result)
-          reader.onerror = reject
-          reader.readAsDataURL(file)
-        })
-
-        return {
-          success: true,
-          data: { url: dataUrl, filename: file.name },
-        }
+        throw new Error(err.response?.data?.message || err.message || 'Supabase Storage upload failed.')
       }
     }
 
@@ -79,6 +67,11 @@ class UploadService {
 
     return response.data
   }
+}
+
+function readAccessToken() {
+  try { return JSON.parse(localStorage.getItem('iron-vault-session') || '{}').access_token || '' }
+  catch { return '' }
 }
 
 export default new UploadService()

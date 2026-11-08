@@ -12,6 +12,24 @@ const sanitizeImageUrl = (imageUrl, fallback = '/guns/pistol.svg') =>
     ? imageUrl
     : fallback
 
+const queryCache = new Map()
+const QUERY_CACHE_MS = 30_000
+const cachedQuery = async (key, request) => {
+  const existing = queryCache.get(key)
+  if (existing?.promise) return existing.promise
+  if (existing && Date.now() - existing.time < QUERY_CACHE_MS) return existing.value
+  const promise = request().then((value) => {
+    queryCache.set(key, { value, time: Date.now() })
+    return value
+  }).catch((error) => {
+    queryCache.delete(key)
+    throw error
+  })
+  queryCache.set(key, { promise })
+  return promise
+}
+const invalidateCatalogCache = () => queryCache.clear()
+
 // ---------------------------------------------------------------------------
 // Normalizer — standardizes product shape whether received from Supabase
 // (public.products) or from the university API (/api/v1/recipes).
@@ -65,6 +83,9 @@ export const normalizeProduct = (item) => {
     description: item.description || '',
     image_url: safeImageUrl,
     image: safeImageUrl,
+    image_urls: Array.isArray(item.image_urls) && item.image_urls.length
+      ? item.image_urls.map((url) => sanitizeImageUrl(url, safeImageUrl))
+      : [safeImageUrl],
     ingredients: specsList,
     steps: stepsList,
   }
@@ -81,7 +102,13 @@ class GunService {
    */
   async getGuns(params = {}) {
     if (IS_SUPABASE) {
+      const cacheKey = `products:${JSON.stringify(params)}`
+      return cachedQuery(cacheKey, async () => {
       const queryParts = ['select=*']
+
+      if (params.includeArchived) queryParts.push('archived_at=not.is.null')
+      else queryParts.push('archived_at=is.null')
+      if (!params.includeDrafts) queryParts.push('is_draft=eq.false')
 
       if (params.search) {
         queryParts.push(`name=ilike.*${encodeURIComponent(params.search)}*`)
@@ -115,6 +142,7 @@ class GunService {
           limit: params.limit || 50,
         },
       }
+      })
     }
 
     // Fallback: university REST API
@@ -129,11 +157,13 @@ class GunService {
    */
   async getGunById(id) {
     if (IS_SUPABASE) {
+      return cachedQuery(`product:${id}`, async () => {
       const data = await apiClient.get(`/rest/v1/products?id=eq.${id}&select=*`)
       if (Array.isArray(data) && data.length > 0) {
         return { success: true, data: normalizeProduct(data[0]) }
       }
       throw new Error('Hardware item not found.')
+      })
     }
     return apiClient.get(`/api/v1/recipes/${id}`)
   }
@@ -157,12 +187,15 @@ class GunService {
         description: data.description || '',
         specs: specsArray,
         image_url: sanitizeImageUrl(data.image_url, getFallbackImage(data.type || data.category)),
+        image_urls: Array.isArray(data.image_urls) ? data.image_urls : [sanitizeImageUrl(data.image_url, getFallbackImage(data.type || data.category))],
+        is_draft: Boolean(data.is_draft),
       }
 
       const res = await apiClient.post('/rest/v1/products', payload, {
         headers: { Prefer: 'return=representation' },
       })
       const created = Array.isArray(res) ? res[0] : res
+      invalidateCatalogCache()
       return { success: true, data: normalizeProduct(created) }
     }
     return apiClient.post('/api/v1/recipes', data)
@@ -191,11 +224,14 @@ class GunService {
       if (data.description !== undefined) payload.description = data.description
       if (specsArray !== undefined) payload.specs = specsArray
       if (data.image_url !== undefined) payload.image_url = sanitizeImageUrl(data.image_url, getFallbackImage(data.type))
+      if (data.image_urls !== undefined) payload.image_urls = data.image_urls.map((url) => sanitizeImageUrl(url, payload.image_url || getFallbackImage(data.type)))
+      if (data.is_draft !== undefined) payload.is_draft = Boolean(data.is_draft)
 
       const res = await apiClient.patch(`/rest/v1/products?id=eq.${id}`, payload, {
         headers: { Prefer: 'return=representation' },
       })
       const updated = Array.isArray(res) ? res[0] : res
+      invalidateCatalogCache()
       return { success: true, data: normalizeProduct(updated) }
     }
     return apiClient.put(`/api/v1/recipes/${id}`, data)
@@ -217,10 +253,31 @@ class GunService {
   async deleteGun(id) {
     if (IS_SUPABASE) {
       await apiClient.delete(`/rest/v1/products?id=eq.${id}`)
+      invalidateCatalogCache()
       return { success: true }
     }
     return apiClient.delete(`/api/v1/recipes/${id}`)
   }
+
+  async archiveGun(id) {
+    if (IS_SUPABASE) {
+      await apiClient.patch(`/rest/v1/products?id=eq.${id}`, { archived_at: new Date().toISOString() })
+      invalidateCatalogCache()
+      return { success: true }
+    }
+    return this.deleteGun(id)
+  }
+
+  async restoreGun(id) {
+    if (IS_SUPABASE) {
+      await apiClient.patch(`/rest/v1/products?id=eq.${id}`, { archived_at: null })
+      invalidateCatalogCache()
+      return { success: true }
+    }
+    throw new Error('Archive restore requires the Supabase backend.')
+  }
+
+  invalidateCache() { invalidateCatalogCache() }
 }
 
 export default new GunService()

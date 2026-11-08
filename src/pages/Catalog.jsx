@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { RefreshCw, Plus, Loader, AlertCircle, PackageOpen } from 'lucide-react'
 import { useGuns } from '../hooks/useGuns'
 import GUNS_LOCAL from '../data/guns'
@@ -61,6 +61,27 @@ export default function Catalog({ onNavigate, onAddToCart }) {
   // ---- detail view ----
   const [selectedGun, setSelectedGun] = useState(null)
 
+  useEffect(() => {
+    const productId = new URLSearchParams(window.location.search).get('product')
+    if (!productId || loading) return
+    const match = rawGuns.find((item) => String(item.id) === productId || item.name === productId)
+    if (match) setSelectedGun(match)
+  }, [loading, rawGuns])
+
+  const openDetail = (gun) => {
+    setSelectedGun(gun)
+    const url = new URL(window.location.href)
+    url.searchParams.set('product', String(gun.id ?? gun.name))
+    window.history.replaceState({}, '', url)
+  }
+
+  const closeDetail = () => {
+    setSelectedGun(null)
+    const url = new URL(window.location.href)
+    url.searchParams.delete('product')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
   // ---- delete ----
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -71,7 +92,7 @@ export default function Catalog({ onNavigate, onAddToCart }) {
     try {
       setDeleting(true)
       setDeleteError('')
-      await gunService.deleteGun(deleteTarget.id)
+      await gunService.archiveGun(deleteTarget.id)
       setDeleteTarget(null)
       refetch()
     } catch (err) {
@@ -86,7 +107,7 @@ export default function Catalog({ onNavigate, onAddToCart }) {
     return (
       <GunDetail
         gun={selectedGun}
-        onBack={() => setSelectedGun(null)}
+        onBack={closeDetail}
         onEdit={!selectedGun.demoOnly && onNavigate ? (g) => onNavigate('Edit', g) : undefined}
         onDelete={!selectedGun.demoOnly && onNavigate ? (g) => { setSelectedGun(null); setDeleteTarget(g) } : undefined}
         onAddToCart={!selectedGun.demoOnly ? onAddToCart : undefined}
@@ -176,7 +197,7 @@ export default function Catalog({ onNavigate, onAddToCart }) {
               <GunCard
                 key={gun.id || gun.name}
                 gun={gun}
-                onSelect={setSelectedGun}
+                onSelect={openDetail}
                 onEdit={!gun.demoOnly && onNavigate ? (g) => onNavigate('Edit', g) : undefined}
                 onDelete={!gun.demoOnly && onNavigate ? setDeleteTarget : undefined}
                 onAddToCart={onAddToCart}
@@ -203,8 +224,8 @@ export default function Catalog({ onNavigate, onAddToCart }) {
       <ConfirmModal
         open={!!deleteTarget}
         title="Delete Product"
-        message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
+        message={`Archive "${deleteTarget?.name}"? You can restore it later from your profile.`}
+        confirmLabel="Archive"
         danger
         loading={deleting}
         onConfirm={handleDelete}
