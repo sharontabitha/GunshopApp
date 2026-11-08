@@ -37,4 +37,8 @@ Migrasi [`assignment-features.sql`](./supabase/assignment-features.sql) sudah be
 
 ## Gambar hasil program
 
-Untuk bukti visual, ambil tangkapan layar halaman katalog dan halaman Profile (khususnya section Drafts dan Archive) pada situs Vercel. Untuk bukti lazy load dan cache, ambil tangkapan layar DevTools Network dengan filter Img sebelum dan sesudah scroll; gambar-gambar tersebut memperlihatkan unduhan bertahap dan cache browser.
+Berikut tangkapan layar katalog dari deployment Vercel saat ini:
+
+![Tampilan katalog Iron Vault di Vercel](./screenshot-katalog.png)
+
+Untuk bukti lazy load dan cache, ambil tangkapan layar DevTools Network dengan filter Img sebelum dan sesudah scroll; gambar-gambar tersebut memperlihatkan unduhan bertahap dan cache browser.
